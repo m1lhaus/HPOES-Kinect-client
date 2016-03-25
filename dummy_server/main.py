@@ -2,105 +2,127 @@
 
 import os
 import sys
-
 import socket
-import sys
 
 import cv2
-
 import numpy as np
-# Create a TCP/IP socket
-from pandas.core.reshape import wide_to_long
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+SERVER_HOST = "localhost"
+SERVER_PORT = 10000
+BLENDER_HOST = "localhost"
+BLENDER_PORT = 10100
 
-# Bind the socket to the port
-server_address = ('localhost', 10000)
-print >>sys.stderr, 'starting up on %s port %s' % server_address
-sock.bind(server_address)
+VISUALIZE = True
 
-# Listen for incoming connections
-sock.listen(1)
 
-width, height, dtype = None, None, None
+def init_server(hostname='localhost', port=10000):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (hostname, port)
+    print 'starting up server on %s port %s' % server_address
+    server_socket.bind(server_address)
+    return server_socket
 
-try:
 
-    while True:
-        # Wait for a connection
-        print >>sys.stderr, 'waiting for a connection'
-        connection, client_address = sock.accept()
+def init_client(hostname='localhost', port=10000):
+    return None
+
+
+def kinect_hello_protocol(kinect_socket):
+    data = kinect_socket.recv(1024)
+    if data == "HELLO":
+        kinect_socket.sendall("HELLO")
+    else:
+        raise Exception("HELLO expected, but got '%s' instead" % data)
+
+    data = kinect_socket.recv(1024)
+    if data and data.startswith("WIDTH"):
+        _, width = data.split(" ")
+        width = int(width)
+        print "OK, expecting image width", width
+        kinect_socket.sendall("OK")
+    else:
+        raise Exception("WIDTH expected, but got '%s' instead" % data)
+
+    data = kinect_socket.recv(1024)
+    if data and data.startswith("HEIGHT"):
+        _, height = data.split(" ")
+        height = int(height)
+        print "OK, expecting image height", height
+        kinect_socket.sendall("OK")
+    else:
+        raise Exception("HEIGHT expected, but got '%s' instead" % data)
+
+    data = kinect_socket.recv(1024)
+    if data and data.startswith("DTYPE"):
+        _, dtype = data.split(" ")
+        dtype = np.dtype(dtype)
+        print "OK, expecting image dtype", dtype
+        kinect_socket.sendall("OK")
+    else:
+        raise Exception("DTYPE expected, but got '%s' instead" % data)
+
+    data = kinect_socket.recv(1024)
+    if data == "DATA":
+        print "OK, now waiting for image data .. expected bytesize", width*height*dtype.itemsize
+        kinect_socket.sendall("OK")
+    else:
+        raise Exception("DATA expected, but got '%s' instead" % data)
+
+    return width, height, dtype
+
+
+def blender_hello_protocol():
+    pass
+
+
+def nn_forward_pass(image):
+    return None
+
+
+def send_to_blender(data):
+    pass
+
+
+def handle_kinect_client():
+    try:
+        server_socket.listen(1)                     # Listen for incoming connections
+        print 'waiting for a connection'
+        kinect_socket, client_address = server_socket.accept()
+        print 'connection from', client_address
 
         try:
-            print >>sys.stderr, 'connection from', client_address
-
-            data = connection.recv(1024)
-            if data == "HELLO":
-                connection.sendall("HELLO")
-            else:
-                raise Exception("HELLO expected, but got '%s' instead" % data)
-
-            data = connection.recv(1024)
-            if data and data.startswith("WIDTH"):
-                _, width = data.split(" ")
-                width = int(width)
-                print "OK, expecting image width", width
-                connection.sendall("OK")
-            else:
-                raise Exception("WIDTH expected, but got '%s' instead" % data)
-
-            data = connection.recv(1024)
-            if data and data.startswith("HEIGHT"):
-                _, height = data.split(" ")
-                height = int(height)
-                print "OK, expecting image height", height
-                connection.sendall("OK")
-            else:
-                raise Exception("HEIGHT expected, but got '%s' instead" % data)
-
-            data = connection.recv(1024)
-            if data and data.startswith("DTYPE"):
-                _, dtype = data.split(" ")
-                dtype = np.dtype(dtype)
-                print "OK, expecting image dtype", dtype
-                connection.sendall("OK")
-            else:
-                raise Exception("DTYPE expected, but got '%s' instead" % data)
-
-            data = connection.recv(1024)
-            if data == "DATA":
-                print "OK, now waiting for image data .. expected bytesize", width*height*dtype.itemsize
-                connection.sendall("OK")
-            else:
-                raise Exception("DATA expected, but got '%s' instead" % data)
-
-            img_bytesize = width*height*dtype.itemsize
-
+            width, height, dtype = kinect_hello_protocol(kinect_socket)
+            img_byte_size = width*height*dtype.itemsize      # image bytesize
 
             while True:
-                remaining_bytes = img_bytesize
+                remaining_bytes = img_byte_size
 
-                buffer = []
-                while remaining_bytes > 0:
-                    data = connection.recv(8192)
+                recv_buffer = []
+                while remaining_bytes:
+                    data = kinect_socket.recv(min(8192, remaining_bytes))
                     if data:
-                        buffer.append(data)
+                        recv_buffer.append(data)
                         remaining_bytes -= len(data)
                     else:
-                        print "Expected some data, but got none ... remaining_bytes: %d" % remaining_bytes
-                        raise Exception()
+                        raise Exception("Expected some data, but got none ... remaining_bytes: %d" % remaining_bytes)
 
-                byte_img = "".join(buffer)
-                img = np.fromstring(byte_img, dtype=dtype).reshape((height, width))
+                img = np.fromstring("".join(recv_buffer), dtype=dtype).reshape((height, width))
+                data = nn_forward_pass(img)
+                send_to_blender(data)
 
-                cv2.imshow("Received image", img)
-                cv2.waitKey(1)
-
-            cv2.destroyAllWindows()
+                if VISUALIZE:
+                    cv2.imshow("Received image", img)
+                    cv2.waitKey(1)      # has to be non-zero
 
         finally:
-            # Clean up the connection
-            connection.close()
+            kinect_socket.close()       # Clean up the connection
+            if VISUALIZE:
+                cv2.destroyAllWindows()
+    finally:
+        server_socket.close()
 
-finally:
-    sock.close()
+
+if __name__ == '__main__':
+    server_socket = init_server(SERVER_HOST, SERVER_PORT)
+    blender_socket = init_client(BLENDER_HOST, BLENDER_PORT)
+    handle_kinect_client()
