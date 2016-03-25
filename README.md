@@ -1,5 +1,11 @@
 # HPOES-Kinect-client
+
 Kinect part of the code for HPOES project
+
+# Repository
+
+- C++ PyQt Kinect client (libfreenect2)
+- Python dummy server
 
 # Requirements
 
