@@ -1,6 +1,6 @@
 #include "serverclient.h"
 #include "kinecthandler.h"
-#include "segmentation.h"
+#include "segmentation/segmentation.h"
 
 
 ServerClient::ServerClient(QObject *parent) : QObject(parent)
@@ -36,7 +36,7 @@ void ServerClient::run()
     }
 
     data.clear();
-    data.append("WIDTH 512");
+    data.append("WIDTH 96");
     qDebug() << "Sending WIDTH to server...";
     if (!sendData(data) || !waitForOK()) {
         qCritical() << "Server does not follow protocol, returning!";
@@ -44,7 +44,7 @@ void ServerClient::run()
     }
 
     data.clear();
-    data.append("HEIGHT 424");
+    data.append("HEIGHT 96");
     qDebug() << "Sending HEIGHT to server...";
     if (!sendData(data) || !waitForOK()) {
         qCritical() << "Server does not follow protocol, returning!";
@@ -52,7 +52,7 @@ void ServerClient::run()
     }
 
     data.clear();
-    data.append("DTYPE uint16");
+    data.append("DTYPE float32");
     qDebug() << "Sending DTYPE to server...";
     if (!sendData(data) || !waitForOK()) {
         qCritical() << "Server does not follow protocol, returning!";
@@ -69,7 +69,7 @@ void ServerClient::run()
     emit message("Communication protocol done");
 
     // --- INIT SEGMENTATION ---
-    Segmentation segmentation;
+    Segmentation segmentation(96, 96);
     cv::Mat segmented;
     // -------------------------
 
@@ -81,7 +81,6 @@ void ServerClient::run()
     }
     emit message("Kinect initialized, recording...");
     cv::Mat depth, registered;
-    double t0, exec_time;
     // --------------------
 
     if (this->visualize) {
@@ -89,22 +88,33 @@ void ServerClient::run()
         cv::namedWindow("Registered");
     }
 
+    QElapsedTimer kinectTimeMeasure, segTimeMeasure, tcpTimeMeasure;
+
     // --- MAIN FRAME GRABBING LOOP ---
     kinectHlander.startKinect();
     while (!this->stop) {
+//        this->thread()->msleep(100);
+
         // grab the frame
-        //t0 = (double) cv::getTickCount();
+        // kinectTimeMeasure.restart();
         kinectHlander.grabFrame(depth, registered);
-        //exec_time = ((double)cv::getTickCount() - t0)*1000./cv::getTickFrequency();
-        //qDebug() << "Frame grab exec time:" << exec_time;
+        // qDebug() << "Frame grab exec time:" << kinectTimeMeasure.elapsed() << "ms";
 
         // segment hand
-        segmentation.segmentImage(depth, segmented);
+        // segTimeMeasure.restart();
+        if (segmentation.segmentImage(registered, depth, segmented)) {
+            // qDebug() << "Segmentation exec time:" << segTimeMeasure.elapsed() << "ms";
 
-        // send segmented hand to server
-        if (!sendImage(segmented)) {
-            qCritical() << "Image sending failed, terminating kinect recording...";
-            break;
+            // send segmented hand to server
+            // tcpTimeMeasure.restart();
+            if (!sendImage(segmented) || !waitForOK()) {
+                qCritical() << "Image sending failed, terminating kinect recording...";
+                break;
+            }
+            // qDebug() << "Tcp data send time:" << tcpTimeMeasure.elapsed() << "ms";
+
+        } else {
+            qDebug() << "No hand segmented!";
         }
 
         if (this->visualize) {

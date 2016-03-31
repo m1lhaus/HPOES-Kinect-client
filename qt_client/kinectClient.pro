@@ -16,12 +16,12 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     serverclient.cpp \
     kinecthandler.cpp \
-    segmentation.cpp
+    segmentation/segmentation.cpp
 
 HEADERS  += mainwindow.h \
     serverclient.h \\
     kinecthandler.h \
-    segmentation.h
+    segmentation/segmentation.h
 
 FORMS    += mainwindow.ui
 

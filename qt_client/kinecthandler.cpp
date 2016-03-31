@@ -104,13 +104,7 @@ void KinectHandler::grabFrame(cv::Mat &outputDepth, cv::Mat &outputRegistered)
 
     cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(outputDepth);
     cv::Mat(registered.height, registered.width, CV_8UC4, registered.data).copyTo(outputRegistered);
-
-    // norm depth to 0..65535
-    outputDepth.convertTo(outputDepth, CV_32FC1);
-    outputDepth /= 4500.0f;
-    outputDepth *= 65535;
-    outputDepth.convertTo(outputDepth, CV_16UC1);
-    //cv::cvtColor(rgbd, rgbd, CV_RGBA2RGB);      // trim alpha channel
+    cv::cvtColor(outputRegistered, outputRegistered, CV_BGRA2BGR);      // trim alpha channel
 
     listener.release(frames);
 }
