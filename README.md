@@ -29,16 +29,7 @@ For more information head to module folder. There is a README file with detailed
 - receives hand parameters
 - renders estimated pose
 
+## Dummy server
 
-
-# Repository
-
-- C++ PyQt Kinect client (libfreenect2)
-- Python dummy server
-
-# Requirements
-
-- Qt 5 framework
-- Libfreenect2 (with Kinect v2 device)
-- OpenCV 2
-- Python2 + OpenCV2
+- acts like Caffe server
+- to Qt/Kinect client debug purposes
