@@ -1,3 +1,4 @@
 .idea
 dummy_server/.idea
 qt_client/segmentation/.idea
+qt_client/kinectClient.pro.user
