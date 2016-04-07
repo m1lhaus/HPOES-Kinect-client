@@ -4,7 +4,7 @@
 - grabs data from Kinect v2 sensor (libfreenect2)
 - converts raw data to OpenCV Mat
 - applies hand hand segmentation algorithms
-- sends segmented hand patch (window) to Caffe module through TC
+- sends segmented hand patch (window) to Caffe module through TCP
 
 ## Components:
 
