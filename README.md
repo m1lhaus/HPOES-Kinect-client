@@ -14,14 +14,7 @@ For more information head to module folder. There is a README file with detailed
 - applies hand hand segmentation algorithms
 - sends segmented hand patch (window) to Caffe module through TCP
 
-## Dummy server
-
-- acts like Caffe server
-- to Qt/Kinect client debug purposes
-
-## In progress:
-
-### Caffe module
+## Caffe module
 
 - written in Python2
 - listens for Kinect client on TCP
@@ -29,9 +22,14 @@ For more information head to module folder. There is a README file with detailed
 - makes prediction of hand parameters (Caffe framework)
 - sends hand parameters to Blender module through TCP
 
-### Blender module
+## Blender module
 
 - written in Python3
 - runs as Blender script
 - receives hand parameters
 - renders estimated pose
+
+## Dummy server
+
+- acts like Caffe server
+- to Qt/Kinect client debug purposes
