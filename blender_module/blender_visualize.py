@@ -23,6 +23,7 @@ import numpy as np
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 10100
 DATA_SHAPE = None
+DATA_DTYPE = None
 BONE_NAMES = []
 CLIENT_TIMEOUT = 60      # sec
 SERVER_TIMEOUT = 120     # sec
@@ -101,7 +102,7 @@ def recv_data():
     predictor_socket.sendall(b"OK")
 
     recv_buffer = b"".join(recv_buffer)
-    rot_data = np.frombuffer(recv_buffer, dtype=np.float32)
+    rot_data = np.frombuffer(recv_buffer, dtype=DATA_DTYPE)
     return rot_data
 
 
@@ -197,7 +198,7 @@ if __name__ == '__main__':
             if data and data.decode().startswith("SHAPE"):
                 _, DATA_SHAPE = data.decode().split(" ")
                 DATA_SHAPE = int(DATA_SHAPE)
-                print("OK, expecting data shape (%d,) and dtype float32" % DATA_SHAPE)
+                print("OK, expecting data shape (%d,)" % DATA_SHAPE)
             else:
                 raise Exception("SHAPE expected, but got %s instead" % data)
 
@@ -205,6 +206,19 @@ if __name__ == '__main__':
                 raise Exception("Input data are in wrong format. "
                                 "len(bone_list) = %s (must be X), "
                                 "data_shape = %s (must be X) " % (len(BONE_NAMES), DATA_SHAPE))
+
+            predictor_socket.sendall(b"OK")
+            # -------------------------------
+
+            # --- get info about dtype ---
+            print("Waiting for information about data type ...")
+            data = predictor_socket.recv(1024)
+            if data and data.decode().startswith("DTYPE"):
+                _, DATA_DTYPE = data.decode().split(" ")
+                DATA_DTYPE = np.dtype(DATA_DTYPE)
+                print("OK, expecting data dtype %s" % DATA_DTYPE)
+            else:
+                raise Exception("DTYPE expected, but got %s instead" % data)
 
             predictor_socket.sendall(b"OK")
             # -------------------------------

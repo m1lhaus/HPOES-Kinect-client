@@ -103,9 +103,18 @@ def blender_hello_protocol():
         raise Exception("OK expected, but got '%s' instead" % data)
     # ---------------------------
 
-    # --- send list of bones ---
+    # --- send info about shape ---
     print("Sending data shape to Blender ...")
     data = "SHAPE " + str(len(BONES)*4)
+    blender_socket.sendall(data)
+    data = blender_socket.recv(1024)
+    if data != "OK":
+        raise Exception("OK expected, but got '%s' instead" % data)
+    # ---------------------------
+
+    # --- send info about dtype ---
+    print("Sending dtype info to Blender ...")
+    data = "DTYPE float32"
     blender_socket.sendall(data)
     data = blender_socket.recv(1024)
     if data != "OK":
