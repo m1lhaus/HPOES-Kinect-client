@@ -30,6 +30,8 @@ private slots:
     void displayError(int errNum, const QString &message);
     void displayMessage(const QString &message, int timeout = 0);
 
+    void on_handCombo_currentIndexChanged(const QString &arg1);
+
 private:
     Ui::MainWindow *ui;
 

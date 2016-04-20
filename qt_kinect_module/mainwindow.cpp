@@ -31,9 +31,17 @@ void MainWindow::makeConnection()
     qint16 port = ui->portEdit->text().toInt();
     bool visualize = ui->visCheck->isChecked();
 
+    // find out if left or right hand will be used
+    bool mirror;
+    if (ui->handCombo->currentText() == "Left") {
+        mirror = false;
+    } else {
+        mirror = true;
+    }
+
     // run serverClient in separated Thread
     serverClientThread = new QThread(this);
-    serverClient = new ServerClient(hostName, port, visualize);
+    serverClient = new ServerClient(hostName, port, visualize, mirror);
     serverClient->moveToThread(serverClientThread);
 
     connect(serverClientThread, SIGNAL(started()), serverClient, SLOT(run()));
@@ -87,4 +95,18 @@ void MainWindow::displayError(int errNum, const QString &message)
 void MainWindow::displayMessage(const QString &message, int timeout)
 {
     this->statusBar()->showMessage(message, timeout);
+}
+
+void MainWindow::on_handCombo_currentIndexChanged(const QString &arg1)
+{
+    qDebug() << "Hand orientation switched to" << arg1;
+    if (this->serverClient != nullptr) {
+        if (arg1 == "Left") {
+            this->serverClient->mirrorHand = false;
+        } else {
+            this->serverClient->mirrorHand = true;
+        }
+        qDebug() << "Hand orientation changed in serverClient module";
+    }
+
 }

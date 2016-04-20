@@ -12,7 +12,7 @@ class ServerClient : public QObject
     Q_OBJECT
 public:
     explicit ServerClient(QObject *parent = 0);
-    ServerClient(QString hostUrl, quint16 socketPort, bool showImages, QObject *parent = 0);
+    ServerClient(QString hostUrl, quint16 socketPort, bool showImages, bool mirror, QObject *parent = 0);
     ~ServerClient();
 
     bool sendData(QByteArray &data);
@@ -21,6 +21,7 @@ public:
     bool waitRecvData(QByteArray &output, int msecs=5000);
 
     bool stop = false;
+    bool mirrorHand = false;
     bool visualize = false;
     QString hostName;
     quint16 port;

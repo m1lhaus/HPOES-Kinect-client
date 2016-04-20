@@ -7,11 +7,12 @@ ServerClient::ServerClient(QObject *parent) : QObject(parent)
 {
 }
 
-ServerClient::ServerClient(QString hostUrl, quint16 socketPort, bool showImages, QObject *parent) : QObject(parent)
+ServerClient::ServerClient(QString hostUrl, quint16 socketPort, bool showImages, bool mirror, QObject *parent) : QObject(parent)
 {
     this->hostName = hostUrl;
     this->port = socketPort;
     this->visualize = showImages;
+    this->mirrorHand = mirror;
 }
 
 ServerClient::~ServerClient()
@@ -93,7 +94,7 @@ void ServerClient::run()
     // --- MAIN FRAME GRABBING LOOP ---
     kinectHlander.startKinect();
     while (!this->stop) {
-//        this->thread()->msleep(100);
+//        this->thread()->msleep(500);
 
         // grab the frame
         // kinectTimeMeasure.restart();
@@ -104,6 +105,12 @@ void ServerClient::run()
         // segTimeMeasure.restart();
         if (segmentation.segmentImage(registered, depth, segmented)) {
             // qDebug() << "Segmentation exec time:" << segTimeMeasure.elapsed() << "ms";
+
+            if (this->mirrorHand) {
+                Mat flipped;
+                cv::flip(segmented, flipped, 1);
+                segmented = flipped;
+            }
 
             // send segmented hand to server
             // tcpTimeMeasure.restart();
