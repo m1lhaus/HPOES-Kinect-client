@@ -233,10 +233,10 @@ if __name__ == '__main__':
             register()
             bpy.ops.wm.modal_timer_operator()
 
-        except Exception:
+        except:
             predictor_socket.close()
             raise
-    except Exception:
+    except:
         server_socket.close()
         raise
 
