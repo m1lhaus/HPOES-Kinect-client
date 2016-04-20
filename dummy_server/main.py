@@ -17,6 +17,7 @@ VISUALIZE = True
 
 def init_server(hostname='localhost', port=10000):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_address = (hostname, port)
     print 'starting up server on %s port %s' % server_address
     server_socket.bind(server_address)
@@ -105,10 +106,11 @@ def handle_kinect_client():
                         remaining_bytes -= len(data)
                     else:
                         raise Exception("Expected some data, but got none ... remaining_bytes: %d" % remaining_bytes)
-
                 img = np.fromstring("".join(recv_buffer), dtype=dtype).reshape((height, width))
-                data = nn_forward_pass(img)
-                send_to_blender(data)
+                kinect_socket.sendall("OK")
+                # print "Image received from Kinect client"
+                # data = nn_forward_pass(img)
+                # send_to_blender(data)
 
                 if VISUALIZE:
                     cv2.imshow("Received image", img)
